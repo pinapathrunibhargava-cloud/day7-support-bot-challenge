@@ -104,7 +104,7 @@ def chat():
         f"Customer message: {message}"
     )
 
-    logging.info("PROMPT: %s", prompt)
+    logging.info("AI request received")
 
     text, usage = call_llm(prompt, API_KEY)
     result = json.loads(text)
@@ -143,7 +143,7 @@ def chat():
 
         action_result = TOOLS[action](**args)
 
-    logging.info("REPLY to customer: %s", result.get("reply", ""))
+    logging.info("AI response generated successfully")
 
     return jsonify({
         "reply": result.get("reply", ""),
