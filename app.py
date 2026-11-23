@@ -5,6 +5,8 @@ and an action, and the app carries out the action.
 """
 import json
 import logging
+import time
+import uuid
 
 from flask import Flask, jsonify, request
 
@@ -15,6 +17,7 @@ app = Flask(__name__)
 API_KEY = "sk-demo-4f9a2c71-FAKE-KEY-for-training-only"
 
 logging.basicConfig(filename="logs/app.log", level=logging.INFO)
+MODEL_NAME = "training-rule-based-mock"
 
 ORDERS = {
     "10231": {
@@ -104,10 +107,36 @@ def chat():
         f"Customer message: {message}"
     )
 
-    logging.info("AI request received")
+    # Generate a unique ID for each AI request
+    request_id = str(uuid.uuid4())
+
+    # Measure AI processing time
+    start_time = time.perf_counter()
 
     text, usage = call_llm(prompt, API_KEY)
+
+    latency_ms = round((time.perf_counter() - start_time) * 1000, 2)
+
     result = json.loads(text)
+
+    # Extract token usage
+    input_tokens = usage.get("input_tokens", 0)
+    output_tokens = usage.get("output_tokens", 0)
+
+    # The training LLM is local and does not incur API charges
+    estimated_cost_usd = 0.0
+
+    # Log monitoring information without customer PII
+    logging.info(
+        "AI_CALL request_id=%s model=%s latency_ms=%.2f "
+        "input_tokens=%d output_tokens=%d estimated_cost_usd=%.6f",
+        request_id,
+        MODEL_NAME,
+        latency_ms,
+        input_tokens,
+        output_tokens,
+        estimated_cost_usd
+    )
 
     action = result.get("action")
     action_result = None
@@ -143,7 +172,7 @@ def chat():
 
         action_result = TOOLS[action](**args)
 
-    logging.info("AI response generated successfully")
+
 
     return jsonify({
         "reply": result.get("reply", ""),
@@ -153,4 +182,4 @@ def chat():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)
